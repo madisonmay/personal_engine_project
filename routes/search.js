@@ -1,7 +1,8 @@
 var google = require('google');
+var images = require('google-images');
 
 //google plugin configuration
-google.resultsPerPage = 25;
+google.resultsPerPage = 10;
 
 exports.google = function(req, res) {
 	google(req.query.q, function(err, next, links){
@@ -10,9 +11,15 @@ exports.google = function(req, res) {
 	    }
 
 	    res.send(links);
-	    // for (var i = 0; i < links.length; ++i) {
-	    //     console.log(links[i].title + ' - ' + links[i].link); 
-	    //     console.log(links[i].description + "\n");
-	    // }
+	});
+}
+
+exports.images = function(req, res) {
+	images.search(req.query.q, function(err, images) {
+		if (err) {
+			console.error(err);
+		}
+
+		res.send(images);
 	});
 }

@@ -9,6 +9,7 @@ var express = require('express'),
     path = require('path'),
     request = require('request'),
     google = require('google'),
+    images = require('google-images'),
     connect = require('./routes/connect.js'),
     search = require('./routes/search.js'),
     rem = require('rem');
@@ -39,7 +40,8 @@ app.configure('production', function(){
 });
 
 app.get('/', routes.index);
-app.get('/google', search.google)
+app.get('/google', search.google);
+app.get('/images', search.images);
 
 app.listen(3000, function(){
   console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);

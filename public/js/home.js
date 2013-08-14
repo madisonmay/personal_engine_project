@@ -8,6 +8,6 @@ $(document).ready(function() {
 
 	$('#search').click(function() {
 		var query = $('#search-input').val();
-		window.location = '/google?q=' + encodeURIComponent(query);
+		window.location = '/images?q=' + encodeURIComponent(query);
 	})
 })

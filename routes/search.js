@@ -10,7 +10,7 @@ exports.google = function(req, res) {
 	    	console.error(err);
 	    }
 
-	    res.send(links);
+	    res.render('results', {'title': req.query.q, 'links': links});
 	});
 }
 

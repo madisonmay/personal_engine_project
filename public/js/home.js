@@ -1,4 +1,6 @@
 $(document).ready(function() {
+	var services = ['google', 'images'];
+
 	$('#search-input').keypress(function(e) {
 	    if(e.which == 13) {
 	        $(this).blur();
@@ -8,6 +10,7 @@ $(document).ready(function() {
 
 	$('#search').click(function() {
 		var query = $('#search-input').val();
-		window.location = '/images?q=' + encodeURIComponent(query);
+		var service = services[0];
+		window.location = '/' + service + '?q=' + encodeURIComponent(query);
 	})
 })

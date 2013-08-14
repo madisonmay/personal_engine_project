@@ -1,0 +1,18 @@
+block body
+	script.
+		var links = !{JSON.stringify(links)}
+
+	div#arrow-right
+
+	div.sidebar
+		img.logo(src='/img/twitter.png')
+		img.logo(src='/img/facebook.png')
+		img.logo(src='/img/google.png')
+
+	div.hidden(ng-controller="LinkCtrl")
+		ul
+			li(ng-repeat="link in links") {{ link.title }}
+
+
+
+

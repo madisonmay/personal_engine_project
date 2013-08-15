@@ -10,6 +10,7 @@ $(document).ready(function() {
 	})
 
 	$('.logo').mouseout(function() {
+		//switch to black and white logo
 		if (!$(this).attr('active') && $(this).attr('color')) {
 			var source = $(this).attr('src').split('-')[0];
 			$(this).attr('src', source + '.png');
@@ -18,6 +19,7 @@ $(document).ready(function() {
 	})
 
 	$('.logo').click(function() {
+		//make logo active and change to color logo
 		$('#arrow-right').css('top', $(this).position().top + 59);	
 		var old = $('.logo[active=true]')
 		old.removeAttr('active');
@@ -27,12 +29,16 @@ $(document).ready(function() {
 		$(this).attr('active', true);
 	})
 
-	//highlight the first option
-	var primary = $('.logo').first();
-	var source = primary.attr('src').split('.')[0];
-	primary.attr('src', source + '-color.png');
-	primary.attr('color', true);
-	primary.attr('active', true);
+	//position logos centered vertically
+	var height = $(window).height();
+	var num_logos = $('.logo').length;
+	var extra_space = height - 138 * num_logos;
+	if (extra_space > 0) {
+		$('#padding').height(extra_space/2 + 5 + 'px');
+
+		//position arrow
+		$('#arrow-right').css('top', $('.logo').first().position().top + 59);
+	}
 })
 
 function LinkCtrl($scope) {

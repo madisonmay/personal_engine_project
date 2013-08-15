@@ -1,3 +1,10 @@
+function urlParam(name) {
+    name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
 $(document).ready(function() {
 
 	$('.logo').mouseover(function() {
@@ -28,6 +35,13 @@ $(document).ready(function() {
 			old.attr('src', source + '.png');
 			old.removeAttr('color');
 			$(this).attr('active', 1);
+
+			//send jquery post request to server
+			var service = $(this).attr('src').split('-')[0];
+			var service = service.split('/')[2];
+			$.post('/refresh', {'service': service, 'q': urlParam('q')}, function(html) {
+				$('#content-container').html(html);
+			});
 		}
 	})
 
@@ -42,6 +56,7 @@ $(document).ready(function() {
 	//position arrow
 	$('#arrow-right').css('top', $('.logo[active=1]').position().top + 59);
 
+	//move arrow with scrollbar
 	$('.sidebar').scroll(function(){
 	    var active = $('.logo[active=1]');
 	    $('#arrow-right').css('top', active.position().top + 59);

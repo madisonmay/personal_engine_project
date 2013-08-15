@@ -1,26 +1,19 @@
 block body
 	script(src='/js/controller.js')
-	script.
-		var links = !{JSON.stringify(links)}
 
 	div#arrow-right
 
 	div.sidebar
 		div#padding
-		img.logo(src='/img/twitter-color.png', color=true, active=1)
-		img.logo(src='/img/facebook.png', color=false)
-		img.logo(src='/img/google.png', color=false)
-		img.logo(src='/img/google_web.png', color=false)
-		img.logo(src='/img/google_images.png', color=false)
-		//- img.logo(src='/img/twitter.png', color=false)
+		//- img.logo(src='/img/twitter-color.png', color=true, active=1)
 		//- img.logo(src='/img/facebook.png', color=false)
 		//- img.logo(src='/img/google.png', color=false)
-		//- img.logo(src='/img/google_web.png', color=false)
-		//- img.logo(src='/img/google_images.png', color=false)
+		img.logo(src='/img/google_web-color.png', color=true, active=1)
+		img.logo(src='/img/google_images.png', color=false)
 
-	div.hidden(ng-controller="LinkCtrl")
-		ul
-			li(ng-repeat="link in links") {{ link.title }}
+
+	div#content-container
+		include links
 
 
 

@@ -1,0 +1,7 @@
+script.
+	var links = !{JSON.stringify(links)}
+
+div(ng-controller="LinkCtrl")
+	ul
+		li(ng-repeat="link in links") 
+			a(href='{{ link.href }}{{ link.url }}') {{ link.href }}{{ link.url }}

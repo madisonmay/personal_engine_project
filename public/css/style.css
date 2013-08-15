@@ -86,3 +86,10 @@ a {
 ::-webkit-scrollbar-thumb:window-inactive {
 	background: rgba(0,0,0,0.4); 
 }
+
+#content-container {
+	position: absolute; 
+	top: 0; left: 150px; 
+	height: 100%; 
+	padding: 5px;
+}

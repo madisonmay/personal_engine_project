@@ -1,5 +1,4 @@
 $(document).ready(function() {
-	var services = ['google', 'images'];
 
 	$('#search-input').keypress(function(e) {
 	    if(e.which == 13) {
@@ -10,7 +9,6 @@ $(document).ready(function() {
 
 	$('#search').click(function() {
 		var query = $('#search-input').val();
-		var service = services[0];
-		window.location = '/' + service + '?q=' + encodeURIComponent(query);
+		window.location = '/search?q=' + encodeURIComponent(query);
 	})
 })

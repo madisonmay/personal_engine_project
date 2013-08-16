@@ -1,5 +1,9 @@
 $(document).ready(function() {
 
+	//position cursor
+	var input = $('#search-input');
+	input[0].selectionStart = input[0].selectionEnd = input.val().length;
+
 	$('#search-input').keypress(function(e) {
 	    if(e.which == 13) {
 	        $(this).blur();

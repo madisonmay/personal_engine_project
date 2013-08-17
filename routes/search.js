@@ -1,5 +1,8 @@
+var Models = require('../models/models.js');
+var Keyword = Models.Keyword;
 var google = require('google');
 var images = require('google-images');
+
 
 //google plugin configuration
 google.resultsPerPage = 10;

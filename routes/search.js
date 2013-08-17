@@ -69,3 +69,8 @@ exports.refresh = function(req, res) {
 	    fn(res, query, refresh=true);
 	}
 } 
+
+exports.bayesUpdate = function(req, res) {
+	console.log(req.body);
+	res.send(req.body);
+}

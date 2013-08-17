@@ -7,11 +7,11 @@ script.
 div(ng-controller="LinkCtrl")
 	each link in links
 		if search_type == "google_images"
-			a(href='#{link.unescapedUrl}')
+			a.result(href='#{link.unescapedUrl}')
 				img.image(src='#{link.unescapedUrl}')
 		if search_type == "google_web"
 			div
-				a(href!='{link.url}') #{link.title}
+				a.result(href!='{link.url}') #{link.title}
 
 if search_type == "google_images"
 	script.

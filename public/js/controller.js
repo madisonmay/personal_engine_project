@@ -7,6 +7,8 @@ function urlParam(name) {
 
 $(document).ready(function() {
 
+	window.original_height = $(window).height()
+
 	$('.logo').mouseover(function() {
 		//switch to color logo
 		if (!$(this).attr('color')) {
@@ -45,6 +47,13 @@ $(document).ready(function() {
 		}
 	})
 
+	$('#content-container').on('click', 'a.result', function() {
+		data = {search_type: search_type, q: urlParam('q')};
+		$.post('/bayes', data, function(response) {
+			console.log(response);
+		})
+	})
+
 	//position logos centered vertically
 	var height = $(window).height();
 	var num_logos = $('.logo').length;
@@ -63,6 +72,10 @@ $(document).ready(function() {
 	});
 })
 
+
+$(window).scroll(function() {
+	$('.sidebar').height(window.original_height + $(window).scrollTop())
+})
 
 $(window).resize(function() {
 

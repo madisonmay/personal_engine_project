@@ -10,7 +10,20 @@ function google_web(res, query, refresh) {
 	    	console.error(err);
 	    }
 
-	    var data = {'title': query, 'links': links};
+	    //iterate backwards in order to safely 
+	    //delete elements on the fly
+	    for (var i=links.length-1; i>=0; i--) {
+	    	//no associated url
+	    	if (!links[i].link) {
+	    		//remove item from list
+	    		links.splice(i, 1);
+	    	} else {
+	    		//use link.url to store url
+	    		links[i].url = links[i].href
+	    	}
+	    }
+
+	    var data = {'title': query, 'links': links, 'search_type': 'google_web'};
 	    if (!refresh) {
 	    	//full page load
 	    	res.render('results', data);
@@ -22,12 +35,12 @@ function google_web(res, query, refresh) {
 }
 
 function google_images(res, query, refresh) {
-	images.search(query, function(err, images) {
+	function process_results(err, images) {
 		if (err) {
 			console.error(err);
 		}
 
-		var data = {'title': query, 'links': images};
+		var data = {'title': query, 'links': images, 'search_type': 'google_images'};
 		if (!refresh) {
 			//full page load
 			res.render('results', data);
@@ -35,7 +48,9 @@ function google_images(res, query, refresh) {
 			//jquery refresh
 			res.render('links', data);
 		}
-	});
+	}
+
+	images.search(query, {page: 1, callback: process_results});
 }
 
 var fns = {'google_web': google_web, 'google_images': google_images}
@@ -53,4 +68,4 @@ exports.refresh = function(req, res) {
 	if(typeof fn === 'function') {
 	    fn(res, query, refresh=true);
 	}
-}
+} 

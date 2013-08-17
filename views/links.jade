@@ -1,7 +1,33 @@
 script.
-	var links = !{JSON.stringify(links)}
+	var links = !{JSON.stringify(links)};
+	var search_type = !{JSON.stringify(search_type)};
+	var window_height = $(window).height();
+	var ideal_height = window_height/2;
 
 div(ng-controller="LinkCtrl")
-	ul
-		li(ng-repeat="link in links") 
-			a(href='{{ link.href }}{{ link.url }}') {{ link.href }}{{ link.url }}
+	each link in links
+		if search_type == "google_images"
+			a(href='#{link.unescapedUrl}')
+				img.image(src='#{link.unescapedUrl}')
+		if search_type == "google_web"
+			div
+				a(href!='{link.url}') #{link.title}
+
+if search_type == "google_images"
+	script.
+		$(document).ready(function() {
+			//clear seperation into rows
+			$('.image').height(ideal_height);
+		});	
+
+		var timer_id;
+		$(window).resize(function() {
+			clearTimeout(timer_id);
+			timer_id = setTimeout(resize_images, 200);
+		});
+
+		function resize_images(){
+			var window_height = $(window).height();
+			var ideal_height = window_height/2;
+			$('.image').height(ideal_height);
+		}

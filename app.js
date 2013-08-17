@@ -12,6 +12,7 @@ var express = require('express'),
     images = require('google-images'),
     connect = require('./routes/connect.js'),
     search = require('./routes/search.js'),
+    mongoose = require('mongoose'),
     rem = require('rem');
 
 var app = module.exports = express.createServer();

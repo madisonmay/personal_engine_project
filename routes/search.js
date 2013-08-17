@@ -1,5 +1,6 @@
 var Models = require('../models/models.js');
 var Keyword = Models.Keyword;
+var Service = Models.Service;
 var google = require('google');
 var images = require('google-images');
 
@@ -74,6 +75,71 @@ exports.refresh = function(req, res) {
 } 
 
 exports.bayesUpdate = function(req, res) {
-	console.log(req.body);
-	res.send(req.body);
+
+	var service = req.body.search_type
+	var capitalized_query = req.body.q.replace(/[\.,-\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+	var query_single_spaced = capitalized_query.replace(/\s{2,}/g," ");
+	var query = query_single_spaced.toLowerCase();
+	var words = query.split(' ');
+
+	//exit if data is not valid
+	if (!service || !query) {
+		return;
+	}
+
+	//increment count for service
+	Service.findOne({name: service}).exec(function(err, db_service) {
+		if (db_service) {
+			db_service.count++;
+			db_service.save();
+		} else {
+			//service does not yet have db object
+			if (service in fns) {
+				new_service = Service({name: service, count: 1});
+				new_service.save();
+			}
+		}
+	});
+
+	keyword_increment(words, service);
+
+	//check to see if keyword already exists in database
+	//recursive -- decreases length of words by 1 each execution
+	function keyword_increment(words, service) {
+		if (words.length > 0) {
+			var word = words[0];
+			words.splice(0, 1);
+
+			if (word.length <= 2) {
+				return keyword_increment(words, service);
+			}
+
+			Keyword.findOne({word: word}).exec(function(err, db_keyword) {
+
+			    if (db_keyword) {
+			    	//increment count for keyword -> service mapping
+			    	db_keyword.services[service]++;
+
+			    	//increment count for keyword
+			    	db_keyword.total_count++;
+			    	db_keyword.save(function(err, keyword) {
+			    		return keyword_increment(words, service);
+			    	})
+
+			    } else {
+			    	//create new entry in db
+			    	var initial_entry = {}
+			    	initial_entry[service] = 1;
+			        new_keyword = new Keyword({word: word,
+			        						   services: initial_entry,
+			        						   total_count: 1});
+			        new_keyword.save(function(err, keyword) {
+						return keyword_increment(words, service);
+			        });
+			    }
+			});
+		} else {
+			return;
+		}
+	}
 }

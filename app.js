@@ -16,6 +16,7 @@ var express = require('express'),
     rem = require('rem');
 
 var app = module.exports = express.createServer();
+mongoose.connect((process.env.MONGOLAB_URI||'mongodb://localhost/pep'));
 
 // Configuration
 app.configure(function(){

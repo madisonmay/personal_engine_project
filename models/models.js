@@ -1,12 +1,20 @@
 var mongoose = require('mongoose');
 
-//Empty string will be used to store data on all queries
 //This data is needed for Bayesian categorization
 var keywordSchema = mongoose.Schema({
     word: String,
-    services: [{name: String, count: Number}]
-    total_count = Number
+    services: {},
+    total_count: Number
 });
 
+//Stores global usage counts for each service
+var serviceSchema = mongoose.Schema({
+	name: String,
+	count: Number
+})
+
 var Keyword = mongoose.model('Keyword', keywordSchema);
+var Service = mongoose.model('Service', serviceSchema);
+
 exports.Keyword = Keyword;
+exports.Service = Service;

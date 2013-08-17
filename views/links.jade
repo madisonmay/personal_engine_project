@@ -11,7 +11,7 @@ div(ng-controller="LinkCtrl")
 				img.image(src='#{link.unescapedUrl}')
 		if search_type == "google_web"
 			div
-				a.result(href!='{link.url}') #{link.title}
+				a.result(href!='#{link.url}') #{link.title}
 
 if search_type == "google_images"
 	script.

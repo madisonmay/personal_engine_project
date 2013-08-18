@@ -14,7 +14,7 @@ $(document).ready(function() {
 		if (!$(this).attr('color')) {
 			var source = $(this).attr('src').split('.')[0];
 			$(this).attr('src', source + '-color.png');
-			$(this).attr('color', true);		
+			$(this).attr('color', 1);		
 		}
 	})
 

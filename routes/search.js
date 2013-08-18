@@ -39,6 +39,9 @@ function google_web(res, query, refresh) {
 }
 
 function google_images(res, query, refresh) {
+
+	images.search(query, {page: 1, callback: process_results});
+
 	function process_results(err, images) {
 		if (err) {
 			console.error(err);
@@ -53,14 +56,19 @@ function google_images(res, query, refresh) {
 			res.render('links', data);
 		}
 	}
-
-	images.search(query, {page: 1, callback: process_results});
 }
 
 var fns = {'google_web': google_web, 'google_images': google_images}
 
+var randomProperty = function (obj) {
+    var keys = Object.keys(obj)
+    return obj[keys[ keys.length * Math.random() << 0]];
+};
+
 exports.search = function(req, res) {
-	google_web(res, req.query.q, refresh=false);
+	var fn = randomProperty(fns);
+	var query = req.query.q;
+	fn(res, query, refresh=false);
 }
 
 exports.refresh = function(req, res) {

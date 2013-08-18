@@ -8,8 +8,14 @@ block body
 		//- img.logo(src='/img/twitter-color.png', color=true, active=1)
 		//- img.logo(src='/img/facebook.png', color=false)
 		//- img.logo(src='/img/google.png', color=false)
-		img.logo(src='/img/google_web-color.png', color=true, active=1)
-		img.logo(src='/img/google_images.png', color=false)
+		if search_type == 'google_web'
+			img.logo(src='/img/google_web-color.png', color=1, active=1)
+		else
+			img.logo(src='/img/google_web.png')
+		if search_type == 'google_images'
+			img.logo(src='/img/google_images-color.png', color=1, active=1)
+		else
+			img.logo(src='/img/google_images.png')
 
 
 	div#content-container

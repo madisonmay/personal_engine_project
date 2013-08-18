@@ -76,10 +76,10 @@ exports.search = function(req, res) {
 		});
 
 		services.forEach(function(service) {
-			serviceMap[service] = service.count/total;
+			serviceMap[service.name] = service.count/total;
 		})
 
-		Keyword.findOne({name: query}, function(err, db_keyword){
+		Keyword.findOne({word: query}, function(err, db_keyword){
 
 			//error or no keyword found in db
 			if (err || !db_keyword) {
@@ -92,13 +92,22 @@ exports.search = function(req, res) {
 					keyword_total += db_keyword.services[service];
 				}
 				var keyword_prob = keyword_total/total;
+				var probabilities = [];
 				services.forEach(function(service) {
-					var prob = ((keyword_total/service.count)*serviceMap[service])/keyword_prob;
-					console.log(service.name + ': ' + prob);
+					var prob = ((db_keyword.services[service.name]/service.count)*serviceMap[service.name])/keyword_prob;
+					// console.log("service: " + service);
+					// console.log("keyword_total: " + keyword_total);
+					// console.log("db_keyword.services[service.name]: " + db_keyword.services[service.name]);
+					// console.log("service.count: " + service.count);
+					// console.log("serviceMap[service.name]: " + serviceMap[service.name]);
+					// console.log("keyword_prob: " + keyword_prob);
+					probabilities.push([prob, service.name]);
 				});
 
-				//still search randomly -- for now
-				var fn = randomProperty(fns);
+				probabilities.sort(function(a,b){return b[0] - a[0]});
+				
+				//best guess based on bayesian prediction
+				var fn = fns[probabilities[0][1]];
 				fn(res, query, refresh=false);
 			}
 		})
@@ -135,9 +144,8 @@ exports.bayesUpdate = function(req, res) {
 	//recursive -- decreases length of words by 1 each execution
 	function keyword_increment(words, service) {
 		if (words.length > 0) {
-			var word = words[0];
-			words.splice(0, 1);
-
+			var word = words.splice(0, 1)[0];
+			
 			if (word.length <= 2) {
 				return keyword_increment(words, service);
 			}
@@ -145,13 +153,35 @@ exports.bayesUpdate = function(req, res) {
 			Keyword.findOne({word: word}).exec(function(err, db_keyword) {
 
 			    if (db_keyword) {
+
 			    	//increment count for keyword -> service mapping
 			    	db_keyword.services[service]++;
 
 			    	//increment count for keyword
 			    	db_keyword.total_count++;
+			    	db_keyword.markModified('services');
 			    	db_keyword.save(function(err, keyword) {
-			    		return keyword_increment(words, service);
+			    		if (err) {
+			    			console.log(err);
+			    		}
+			    		console.log("Keyword:", keyword);
+			    		//increment count for service
+			    		Service.findOne({name: service}).exec(function(err, db_service) {
+			    			if (db_service) {
+			    				db_service.count += 1;
+			    				db_service.save(function(err, service) {
+			    					return keyword_increment(words, service);
+			    				});
+			    			} else {
+			    				//service does not yet have db object
+			    				if (service in fns) {
+			    					new_service = Service({name: service, count: 1});
+			    					new_service.save(function(err, service) {
+			    						return keyword_increment(words, service);
+			    					});
+			    				}
+			    			}
+			    		});
 			    	})
 
 			    } else {
@@ -164,7 +194,6 @@ exports.bayesUpdate = function(req, res) {
 
 			    	//laplacian smoothing
 			    	function incrementCounts(functions) {
-		    			console.log(functions);
 			    		if (Object.keys(functions).length) {
 
 			    			var key = Object.keys(functions)[0];
@@ -187,7 +216,7 @@ exports.bayesUpdate = function(req, res) {
 			    				} else {
 			    					//service does not yet have db object
 			    					if (service in fns) {
-			    						new_service = Service({name: service, count: 1});
+			    						new_service = Service({name: service, count: initial_entry[key]});
 			    						new_service.save(function(err, data) {
 			    							return incrementCounts(functions);
 			    						});
@@ -203,9 +232,7 @@ exports.bayesUpdate = function(req, res) {
 	   			        var new_keyword = new Keyword({word: word,
 	   			        						   services: initial_entry,
 	   			        						   total_count: total});
-	   			        new_keyword.save(function(err, keyword) {
-	   						return keyword_increment(words, service);
-	   			        });
+	   			        new_keyword.save();
 			   		}
 
 			   		incrementCounts(functions);

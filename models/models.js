@@ -3,7 +3,7 @@ var mongoose = require('mongoose');
 //This data is needed for Bayesian categorization
 var keywordSchema = mongoose.Schema({
     word: String,
-    services: {},
+    services: mongoose.Schema.Types.Mixed,
     total_count: Number
 });
 

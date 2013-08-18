@@ -27,7 +27,7 @@ function google_web(res, query, refresh) {
 	    	}
 	    }
 
-	    var data = {'title': query, 'links': links, 'search_type': 'google_web'};
+	    var data = {'title': query, 'links': links, 'search_type': 'google_web', 'services': Object.keys(fns)};
 	    if (!refresh) {
 	    	//full page load
 	    	res.render('results', data);
@@ -47,7 +47,7 @@ function google_images(res, query, refresh) {
 			console.error(err);
 		}
 
-		var data = {'title': query, 'links': images, 'search_type': 'google_images'};
+		var data = {'title': query, 'links': images, 'search_type': 'google_images', 'services': Object.keys(fns)};
 		if (!refresh) {
 			//full page load
 			res.render('results', data);
@@ -66,7 +66,11 @@ var randomProperty = function (obj) {
 };
 
 exports.search = function(req, res) {
-	var query = req.query.q;
+	var capitalized_query = req.query.q.replace(/[\.,-\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+	var query_single_spaced = capitalized_query.replace(/\s{2,}/g," ");
+	var query = query_single_spaced.toLowerCase();
+	var words = query.split(' ');
+	var word_probabilites = [];
 
 	Service.find({}, function(err, services) {
 		var total = 0;
@@ -79,39 +83,87 @@ exports.search = function(req, res) {
 			serviceMap[service.name] = service.count/total;
 		})
 
-		Keyword.findOne({word: query}, function(err, db_keyword){
-
-			//error or no keyword found in db
-			if (err || !db_keyword) {
-				//use random search engine
-				var fn = randomProperty(fns);
-				fn(res, query, refresh=false);
-			} else {
-				var keyword_total = 0;
-				for (service in db_keyword.services) {
-					keyword_total += db_keyword.services[service];
-				}
-				var keyword_prob = keyword_total/total;
-				var probabilities = [];
-				services.forEach(function(service) {
-					var prob = ((db_keyword.services[service.name]/service.count)*serviceMap[service.name])/keyword_prob;
-					// console.log("service: " + service);
-					// console.log("keyword_total: " + keyword_total);
-					// console.log("db_keyword.services[service.name]: " + db_keyword.services[service.name]);
-					// console.log("service.count: " + service.count);
-					// console.log("serviceMap[service.name]: " + serviceMap[service.name]);
-					// console.log("keyword_prob: " + keyword_prob);
-					probabilities.push([prob, service.name]);
-				});
-
-				probabilities.sort(function(a,b){return b[0] - a[0]});
-				
-				//best guess based on bayesian prediction
-				var fn = fns[probabilities[0][1]];
-				fn(res, query, refresh=false);
+		function populateProbs(words) {
+			console.log(words);
+			if (!words.length) {
+				return finish();
 			}
-		})
+			var word = words.splice(0, 1)[0];
+			Keyword.findOne({word: word}, function(err, db_keyword){
+
+				//error or no keyword found in db
+				if (err || !db_keyword) {
+					//next word
+					populateProbs(words);
+				} else {
+					var keyword_total = 0;
+					for (service in db_keyword.services) {
+						keyword_total += db_keyword.services[service];
+					}
+					var keyword_prob = keyword_total/total;
+					var probabilities = [];
+					services.forEach(function(service) {
+						var prob = ((db_keyword.services[service.name]/service.count)*serviceMap[service.name])/keyword_prob;
+						// console.log("service: " + service);
+						// console.log("keyword_total: " + keyword_total);
+						// console.log("db_keyword.services[service.name]: " + db_keyword.services[service.name]);
+						// console.log("service.count: " + service.count);
+						// console.log("serviceMap[service.name]: " + serviceMap[service.name]);
+						// console.log("keyword_prob: " + keyword_prob);
+						probabilities.push([prob, service.name]);
+					});
+
+					word_probabilites.push(probabilities);
+					populateProbs(words);
+				}
+			})
+		}
+		populateProbs(words);
 	});
+
+	function finish() {
+		//generate best guess based on bayesian prediction
+		var service_probabilites = {};
+		for (var i=0; i<word_probabilites.length; i++) {
+			var probs = word_probabilites[i];
+			for (var j=0; j<probs.length; j++) {
+				var service = probs[j][1];
+				var p = probs[j][0];
+				if (service in service_probabilites) {
+					service_probabilites[service].push(p);
+				} else {
+					service_probabilites[service] = [p];
+				}
+			}
+		}
+
+		var bayes_result = []
+		for (service in service_probabilites) {
+			var values = service_probabilites[service];
+			var product = 1;
+			var inverse_product = 1;
+			for (var i=0; i<values.length; i++) {
+				product *= values[i];
+			}
+			for (var i=0; i<values.length; i++) {
+				inverse_product *= 1-values[i];
+			} 
+			var value = product/(product + inverse_product);
+			bayes_result.push([value ,service]);
+		}
+		bayes_result.sort(function(a, b) {return b[0] - a[0]});
+
+		//rankings
+		console.log("Bayes result:", bayes_result);
+
+		var key = bayes_result[0][1];
+		if (key in fns) {
+			var fn = fns[key];
+		} else {
+			var fn = google_web;
+		}
+		fn(res, query, refresh=false);
+	}
 }
 
 exports.refresh = function(req, res) {

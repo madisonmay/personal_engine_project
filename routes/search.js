@@ -137,7 +137,13 @@ exports.bayesUpdate = function(req, res) {
 			    } else {
 			    	//create new entry in db
 			    	var initial_entry = {}
-			    	initial_entry[service] = 1;
+			    	initial_entry[service] = 2;
+
+			    	//laplacian smoothing
+			    	for (key in fns) {
+			    		initial_entry[key] = 1;
+			    	}
+			    	
 			        new_keyword = new Keyword({word: word,
 			        						   services: initial_entry,
 			        						   total_count: 1});

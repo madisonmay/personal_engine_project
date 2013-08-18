@@ -66,9 +66,43 @@ var randomProperty = function (obj) {
 };
 
 exports.search = function(req, res) {
-	var fn = randomProperty(fns);
 	var query = req.query.q;
-	fn(res, query, refresh=false);
+
+	Service.find({}, function(err, services) {
+		var total = 0;
+		var serviceMap = {}
+		services.forEach(function(service) {
+			total += service.count;
+		});
+
+		services.forEach(function(service) {
+			serviceMap[service] = service.count/total;
+		})
+
+		Keyword.findOne({name: query}, function(err, db_keyword){
+
+			//error or no keyword found in db
+			if (err || !db_keyword) {
+				//use random search engine
+				var fn = randomProperty(fns);
+				fn(res, query, refresh=false);
+			} else {
+				var keyword_total = 0;
+				for (service in db_keyword.services) {
+					keyword_total += db_keyword.services[service];
+				}
+				var keyword_prob = keyword_total/total;
+				services.forEach(function(service) {
+					var prob = ((keyword_total/service.count)*serviceMap[service])/keyword_prob;
+					console.log(service.name + ': ' + prob);
+				});
+
+				//still search randomly -- for now
+				var fn = randomProperty(fns);
+				fn(res, query, refresh=false);
+			}
+		})
+	});
 }
 
 exports.refresh = function(req, res) {
@@ -94,20 +128,6 @@ exports.bayesUpdate = function(req, res) {
 	if (!service || !query) {
 		return;
 	}
-
-	//increment count for service
-	Service.findOne({name: service}).exec(function(err, db_service) {
-		if (db_service) {
-			db_service.count++;
-			db_service.save();
-		} else {
-			//service does not yet have db object
-			if (service in fns) {
-				new_service = Service({name: service, count: 1});
-				new_service.save();
-			}
-		}
-	});
 
 	keyword_increment(words, service);
 
@@ -137,19 +157,58 @@ exports.bayesUpdate = function(req, res) {
 			    } else {
 			    	//create new entry in db
 			    	var initial_entry = {}
-			    	initial_entry[service] = 2;
+			    	var total = 0
+
+			    	//should make copy of the global var instead of manually copying
+			    	var functions = {'google_web': google_web, 'google_images': google_images};
 
 			    	//laplacian smoothing
-			    	for (key in fns) {
-			    		initial_entry[key] = 1;
-			    	}
-			    	
-			        new_keyword = new Keyword({word: word,
-			        						   services: initial_entry,
-			        						   total_count: 1});
-			        new_keyword.save(function(err, keyword) {
-						return keyword_increment(words, service);
-			        });
+			    	function incrementCounts(functions) {
+		    			console.log(functions);
+			    		if (Object.keys(functions).length) {
+
+			    			var key = Object.keys(functions)[0];
+			    			delete functions[key];
+
+			    			if (key == service) {
+			    				initial_entry[key] = 2;
+			    				total += 2;
+			    			} else {
+			    				initial_entry[key] = 1;
+			    				total++;
+			    			}
+			    			//increment count for service
+			    			Service.findOne({name: key}).exec(function(err, db_service) {
+			    				if (db_service) {
+			    					db_service.count += initial_entry[key];
+			    					db_service.save(function(err, data) {
+			    						return incrementCounts(functions);
+			    					});
+			    				} else {
+			    					//service does not yet have db object
+			    					if (service in fns) {
+			    						new_service = Service({name: service, count: 1});
+			    						new_service.save(function(err, data) {
+			    							return incrementCounts(functions);
+			    						});
+			    					}
+			    				}
+			    			});
+			    		} else {
+			    			return complete();
+			    		}
+			   		}
+
+			   		function complete() {
+	   			        var new_keyword = new Keyword({word: word,
+	   			        						   services: initial_entry,
+	   			        						   total_count: total});
+	   			        new_keyword.save(function(err, keyword) {
+	   						return keyword_increment(words, service);
+	   			        });
+			   		}
+
+			   		incrementCounts(functions);
 			    }
 			});
 		} else {

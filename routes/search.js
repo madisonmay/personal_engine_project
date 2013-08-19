@@ -8,7 +8,7 @@ var images = require('google-images');
 //google plugin configuration
 google.resultsPerPage = 10;
 
-function google_web(res, query, refresh) {
+function google_web(res, query, refresh, bayes_result) {
 	google(query, function(err, next, links){
 	    if (err) {
 	    	console.error(err);
@@ -27,7 +27,7 @@ function google_web(res, query, refresh) {
 	    	}
 	    }
 
-	    var data = {'title': query, 'links': links, 'search_type': 'google_web', 'services': Object.keys(fns)};
+	    var data = {'title': query, 'links': links, 'search_type': 'google_web', 'services': bayes_result};
 	    if (!refresh) {
 	    	//full page load
 	    	res.render('results', data);
@@ -38,7 +38,7 @@ function google_web(res, query, refresh) {
 	});
 }
 
-function google_images(res, query, refresh) {
+function google_images(res, query, refresh, bayes_result) {
 
 	images.search(query, {page: 1, callback: process_results});
 
@@ -47,7 +47,7 @@ function google_images(res, query, refresh) {
 			console.error(err);
 		}
 
-		var data = {'title': query, 'links': images, 'search_type': 'google_images', 'services': Object.keys(fns)};
+		var data = {'title': query, 'links': images, 'search_type': 'google_images', 'services': bayes_result};
 		if (!refresh) {
 			//full page load
 			res.render('results', data);
@@ -66,6 +66,7 @@ var randomProperty = function (obj) {
 };
 
 exports.search = function(req, res) {
+	console.log(Object.keys(fns));
 	var capitalized_query = req.query.q.replace(/[\.,-\/#!$%\^&\*;:{}=\-_`~()]/g,"");
 	var query_single_spaced = capitalized_query.replace(/\s{2,}/g," ");
 	var query = query_single_spaced.toLowerCase();
@@ -162,7 +163,7 @@ exports.search = function(req, res) {
 		} else {
 			var fn = google_web;
 		}
-		fn(res, query, refresh=false);
+		fn(res, query, refresh=false, bayes_result);
 	}
 }
 

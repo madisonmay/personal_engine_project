@@ -150,12 +150,19 @@ exports.search = function(req, res) {
 				inverse_product *= 1-values[i];
 			} 
 			var value = product/(product + inverse_product);
-			bayes_result.push([value ,service]);
+			bayes_result.push([value, service]);
 		}
 		bayes_result.sort(function(a, b) {return b[0] - a[0]});
 
 		//rankings
 		console.log("Bayes result:", bayes_result);
+
+		if (!bayes_result.length) {
+			for (fn in fns) {
+				bayes_result.push([1, fn]);
+			}
+			google_web(res, query, refresh=false, bayes_result);
+		}
 
 		var key = bayes_result[0][1];
 		if (key in fns) {
@@ -163,6 +170,7 @@ exports.search = function(req, res) {
 		} else {
 			var fn = google_web;
 		}
+
 		fn(res, query, refresh=false, bayes_result);
 	}
 }
@@ -217,12 +225,11 @@ exports.bayesUpdate = function(req, res) {
 			    		if (err) {
 			    			console.log(err);
 			    		}
-			    		console.log("Keyword:", keyword);
 			    		//increment count for service
 			    		Service.findOne({name: service}).exec(function(err, db_service) {
 			    			if (db_service) {
 			    				db_service.count += 1;
-			    				db_service.save(function(err, service) {
+			    				db_service.save(function(err, db_service) {
 			    					return keyword_increment(words, service);
 			    				});
 			    			} else {
@@ -263,14 +270,14 @@ exports.bayesUpdate = function(req, res) {
 			    			Service.findOne({name: key}).exec(function(err, db_service) {
 			    				if (db_service) {
 			    					db_service.count += initial_entry[key];
-			    					db_service.save(function(err, data) {
+			    					db_service.save(function(err, db_service) {
 			    						return incrementCounts(functions);
 			    					});
 			    				} else {
 			    					//service does not yet have db object
 			    					if (service in fns) {
 			    						new_service = Service({name: service, count: initial_entry[key]});
-			    						new_service.save(function(err, data) {
+			    						new_service.save(function(err, new_service) {
 			    							return incrementCounts(functions);
 			    						});
 			    					}

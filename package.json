@@ -1,9 +1,14 @@
 {
-    "name": "application-name"
-  , "version": "0.0.1"
-  , "private": true
-  , "dependencies": {
-      "express": "2.5.8"
-    , "jade": ">= 0.0.1"
+  "name": "application-name",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "express": "2.5.8",
+    "jade": ">= 0.0.1",
+    "google": "~0.3.2",
+    "mongoose": "~3.6.18",
+    "google-images": "~0.1.0",
+    "request": "~2.27.0",
+    "rem": "~0.6.7"
   }
 }

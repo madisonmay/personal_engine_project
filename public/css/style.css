@@ -97,3 +97,8 @@ a {
 .image {
 	padding: 5px;
 }
+
+#logo {
+	margin-top: -150px;
+	font-size: 100px;
+}

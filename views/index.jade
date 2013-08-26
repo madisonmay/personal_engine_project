@@ -3,7 +3,8 @@ block body
 	script(src='/js/home.js')
 	div.absolute-center#search-div
 		div.input-group.col-lg-4.col-lg-offset-4.col-sm-6.col-sm-offset-3.col-12.text-center
-			h1.absolute-center#logo spokes
-			input.form-control#search-input(type='text')
+			img(src='img/spokes.png', style='margin-left: -450px; margin-top: -420px; position: absolute;')
+			div(style='z-index: 100;')
+				input.form-control#search-input(type='text')
 			span.input-group-btn
 				button.btn.btn-search.btn-success#search Search

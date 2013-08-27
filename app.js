@@ -13,8 +13,6 @@ var express = require('express'),
     connect = require('./routes/connect.js'),
     search = require('./routes/search.js'),
     mongoose = require('mongoose'),
-    OAuth = require('oauth').OAuth,
-    querystring = require('querystring'),
     rem = require('rem');
 
 var app = module.exports = express.createServer();
@@ -25,6 +23,7 @@ app.configure(function(){
   app.set('port', process.env.PORT || 3000);
   app.set('views', __dirname + '/views');
   app.set('view engine', 'jade');
+  app.set('base_url', 'http://localhost:3000')
   app.use(express.favicon());
   app.use(express.logger('dev'));
   app.use(express.bodyParser());

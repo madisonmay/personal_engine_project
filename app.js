@@ -13,6 +13,8 @@ var express = require('express'),
     connect = require('./routes/connect.js'),
     search = require('./routes/search.js'),
     mongoose = require('mongoose'),
+    OAuth = require('oauth').OAuth,
+    querystring = require('querystring'),
     rem = require('rem');
 
 var app = module.exports = express.createServer();

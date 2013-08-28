@@ -15,9 +15,12 @@ var express = require('express'),
     mongoose = require('mongoose'),
     querystring = require('querystring'),
     inbox = require('inbox'),
-    rem = require('rem');
+    rem = require('rem'),
+    models = require('./models/models.js');
 
 var app = module.exports = express.createServer();
+var User = models.User;
+
 mongoose.connect((process.env.MONGOLAB_URI||'mongodb://localhost/pep'));
 
 // Configuration
@@ -48,6 +51,8 @@ app.get('/', routes.index);
 app.get('/search', search.search);
 app.post('/refresh', search.refresh);
 app.post('/bayes', search.bayesUpdate);
+app.get('/register', connect.register);
+app.post('/users', connect.addUser);
 
 var uri = encodeURIComponent;
 var base_url = 'https://accounts.google.com/o/oauth2/auth?';
@@ -65,7 +70,16 @@ var query_params = 'scope='+uri(email)+'+'+uri(profile)+'+'+uri(gmail)+'&state='
 var auth_url = base_url + query_params;
 
 app.get('/google', function(req, res) {
-  res.redirect(auth_url);
+  var gmail = req.query.gmail;
+  User.findOne({gmail: gmail}, function(err, db_user) {
+    console.log(db_user);
+    if (!db_user) {
+      res.redirect('/register');
+    } else {
+      req.session.user = db_user;
+      res.redirect(auth_url); 
+    }
+  })
 })
 
 app.get('/google_login', function(req, res){
@@ -73,7 +87,7 @@ app.get('/google_login', function(req, res){
   request.post('https://accounts.google.com/o/oauth2/token', {form: {code: code, client_id: client_id, client_secret: process.env.CLIENT_SECRET,
                                                               redirect_uri: redirect_uri, grant_type: grant_type}},
     function(e, r, body) {
-      var user_email = "worldpeaceagentforchange@gmail.com";
+      var user_email = email;
       var body = JSON.parse(body);
       var access_token = body["access_token"];
       var token_type = body["token_type"];

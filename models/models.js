@@ -14,8 +14,10 @@ var serviceSchema = mongoose.Schema({
 })
 
 var userSchema = mongoose.Schema({
-	name: String,
-	gmail: String
+	first_name: String,
+	last_name: String,
+	gmail: String,
+	google_id: String,
 })
 
 var Keyword = mongoose.model('Keyword', keywordSchema);

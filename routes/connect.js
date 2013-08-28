@@ -2,7 +2,7 @@ var models = require('../models/models.js')
 var User = models.User;
 
 exports.register = function(req, res) {
-	res.render('register', {title: 'Login to spokes'});
+	res.render('register', {title: 'Add Gmail access', user: req.user});
 }
 
 exports.addUser = function(req, res) {

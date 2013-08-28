@@ -4,5 +4,6 @@
  */
 
 exports.index = function(req, res){
-	res.render('index', { title: 'Personal Engine' })
+	console.log(req.user);
+	res.render('index', { title: 'spokes' , user: req.user})
 };

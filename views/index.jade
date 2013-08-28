@@ -8,3 +8,9 @@ block body
 				input.form-control#search-input(type='text')
 			span.input-group-btn
 				button.btn.btn-search.btn-success#search Search
+			if user
+				div#login-div
+			else
+				div#login-div
+					a(href='http://localhost:3000/auth/google')
+						button.btn.btn-success.square Sign in with Google

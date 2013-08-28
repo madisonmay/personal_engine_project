@@ -3,7 +3,10 @@
  * Module dependencies.
  */
 
+Query = {}
+
 var express = require('express'),
+    config = require('./config.js'),
     routes = require('./routes'),
     http = require('http'),
     path = require('path'),
@@ -71,73 +74,106 @@ var auth_url = base_url + query_params;
 
 app.get('/google', function(req, res) {
   var gmail = req.query.gmail;
-  User.findOne({gmail: gmail}, function(err, db_user) {
-    console.log(db_user);
-    if (!db_user) {
-      res.redirect('/register');
-    } else {
-      req.session.user = db_user;
-      res.redirect(auth_url); 
-    }
-  })
+  req.session.q = req.query.q;
+  req.session.reload(console.log);
+  var uid = req.session.uid;
+  if (gmail) {
+    User.findOne({gmail: gmail}, function(err, db_user) {
+      console.log("GMAIL: ", gmail);
+      console.log("DB USER:", db_user);
+      if (!db_user) {
+        res.redirect('/register');
+      } else {
+        req.session.user = db_user;
+        res.redirect(auth_url); 
+      }
+    })
+  } else if (uid) {
+    User.findOne({_id: uid}, function(err, db_user) {
+      console.log("UID: ", uid);
+      console.log("DB USER:", db_user);
+      if (!db_user) {
+        res.redirect('/register');
+      } else {
+        req.session.uid = db_user._id;
+        req.session.reload(console.log)
+        res.redirect(auth_url); 
+      }
+    })
+  } else {
+    res.redirect('/register');
+  }
 })
 
 app.get('/google_login', function(req, res){
   var code = req.query.code;
+  console.log("CODE: ", code);
+  console.log("client_id: ", client_id);
+  console.log('client_secret: ', process.env.CLIENT_SECRET);
+  console.log('redirect_uri: ', redirect_uri);
+  console.log('grant_type: ', grant_type);
   request.post('https://accounts.google.com/o/oauth2/token', {form: {code: code, client_id: client_id, client_secret: process.env.CLIENT_SECRET,
                                                               redirect_uri: redirect_uri, grant_type: grant_type}},
-    function(e, r, body) {
-      var user_email = email;
-      var body = JSON.parse(body);
-      var access_token = body["access_token"];
-      var token_type = body["token_type"];
-      var expires_in = body["expires_in"];
-      var id_token = body["id_token"];
-      var refresh_token = body["refresh_token"];
+    function(e, r, _body) {
+      Query.body = JSON.parse(_body);
+      User.findOne({_id: req.session.uid}).exec(function(err, db_user) {
+        if (err || !db_user) {
+          res.redirect('/register');
+        } 
+        console.log("DB USER:", db_user);
+        console.log('BODY: ', body);
+        var body = Query.body;
+        var user_gmail = db_user.gmail;
+        var access_token = body["access_token"];
+        var token_type = body["token_type"];
+        var expires_in = body["expires_in"];
+        var id_token = body["id_token"];
+        var refresh_token = body["refresh_token"];
 
-      console.log("Access: ", access_token);
-      console.log("Type: ", token_type);
-      console.log("Expires: ", expires_in);
-      console.log("Id: ", id_token);
-      console.log("Refresh: ", refresh_token);
+        console.log("Access: ", access_token);
+        console.log("Type: ", token_type);
+        console.log("Expires: ", expires_in);
+        console.log("Id: ", id_token);
+        console.log("Refresh: ", refresh_token);
 
-      var client = inbox.createConnection(false, "imap.gmail.com", {
-        secureConnection: true,
-        auth:{
-          XOAuth2:{
-            user: user_email,
-            clientId: client_id,
-            clientSecret: process.env.CLIENT_SECRET,
-            refreshToken: refresh_token,
-            accessToken: access_token,
-            timeout: 0
-          }
-        }
-      });
-
-      client.connect();
-
-      client.on("connect", function(){
-        client.openMailbox("INBOX", function(error, info){
-          if(error) throw error;
-          var query = "zhu"
-          client.search('UID SEARCH X-GM-RAW "' + query + '"', function(err, uids){
-            var messages = [];
-            function recursiveFetch(uids, count, max) {
-              if (uids.length != 0 && count < max) {
-                client.fetchData(uids.pop(), function(err, data) {
-                  count++;
-                  messages.push(data)
-                  recursiveFetch(uids, count, max);
-                });
-              } else {
-                console.log(messages);
-              }
+        var client = inbox.createConnection(false, "imap.gmail.com", {
+          secureConnection: true,
+          auth:{
+            XOAuth2:{
+              user: user_gmail,
+              clientId: client_id,
+              clientSecret: process.env.CLIENT_SECRET,
+              refreshToken: refresh_token,
+              accessToken: access_token,
+              timeout: 0
             }
-            recursiveFetch(uids, 0, 10);
+          }
+        });
+
+        client.connect();
+
+        client.on("connect", function(){
+          client.openMailbox("INBOX", function(error, info){
+            if(error) throw error;
+            var query = req.session.q || ""
+            client.search('UID SEARCH X-GM-RAW "' + query + '"', function(err, uids){
+              var messages = [];
+              function recursiveFetch(uids, count, max) {
+                if (uids.length != 0 && count < max) {
+                  client.fetchData(uids.pop(), function(err, data) {
+                    count++;
+                    messages.push(data)
+                    recursiveFetch(uids, count, max);
+                  });
+                } else {
+                  console.log(messages);
+                }
+              }
+              recursiveFetch(uids, 0, 10);
+            });
           });
         });
-      });
+      })
     }
   );
 });

@@ -107,8 +107,19 @@ app.get('/google_login', function(req, res){
           if(error) throw error;
 
           client.search('UID SEARCH X-GM-RAW "zhu"', function(err, uids){
-            var i=0;
-            client.createMessageStream(uids[i]).pipe(process.stdout, {end: false});
+            var messages = [];
+            function recursiveFetch(uids, count, max) {
+              if (uids.length != 0 && count < max) {
+                client.fetchData(uids.pop(), function(err, data) {
+                  count++;
+                  messages.push(data)
+                  recursiveFetch(uids, count, max);
+                });
+              } else {
+                console.log(messages);
+              }
+            }
+            recursiveFetch(uids, 0, 10);
           });
         });
       });

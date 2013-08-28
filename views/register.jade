@@ -1,0 +1,10 @@
+block body
+	script(src='/js/register.js')
+	link(rel='stylesheet', href='/css/register.css')
+	form(action='/users', method='post')
+		div.absolute-center#gmail
+			div.input-group.col-lg-4.col-lg-offset-4.col-sm-6.col-sm-offset-3.col-12.text-center
+				div(style='z-index: 100;')
+					input.form-control.square(type='text', placeholder='Email...', name='gmail')
+				span.input-group-btn
+					button.btn.btn-search.btn-danger.square#gmail-login Login with Gmail

@@ -105,8 +105,8 @@ app.get('/google_login', function(req, res){
       client.on("connect", function(){
         client.openMailbox("INBOX", function(error, info){
           if(error) throw error;
-
-          client.search('UID SEARCH X-GM-RAW "zhu"', function(err, uids){
+          var query = "zhu"
+          client.search('UID SEARCH X-GM-RAW "' + query + '"', function(err, uids){
             var messages = [];
             function recursiveFetch(uids, count, max) {
               if (uids.length != 0 && count < max) {

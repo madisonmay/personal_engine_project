@@ -73,6 +73,7 @@ app.get('/google_login', function(req, res){
   request.post('https://accounts.google.com/o/oauth2/token', {form: {code: code, client_id: client_id, client_secret: process.env.CLIENT_SECRET,
                                                               redirect_uri: redirect_uri, grant_type: grant_type}},
     function(e, r, body) {
+      var user_email = "worldpeaceagentforchange@gmail.com";
       var body = JSON.parse(body);
       var access_token = body["access_token"];
       var token_type = body["token_type"];
@@ -90,7 +91,7 @@ app.get('/google_login', function(req, res){
         secureConnection: true,
         auth:{
           XOAuth2:{
-            user: "worldpeaceagentforchange@gmail.com",
+            user: user_email,
             clientId: client_id,
             clientSecret: process.env.CLIENT_SECRET,
             refreshToken: refresh_token,

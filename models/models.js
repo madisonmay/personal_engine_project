@@ -13,8 +13,15 @@ var serviceSchema = mongoose.Schema({
 	count: Number
 })
 
+var userSchema = mongoose.Schema({
+	name: String,
+	gmail: String
+})
+
 var Keyword = mongoose.model('Keyword', keywordSchema);
 var Service = mongoose.model('Service', serviceSchema);
+var User = mongoose.model('User', userSchema);
 
 exports.Keyword = Keyword;
 exports.Service = Service;
+exports.User = User;

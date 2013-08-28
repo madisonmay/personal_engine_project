@@ -87,32 +87,30 @@ app.get('/google_login', function(req, res){
       console.log("Refresh: ", refresh_token);
 
       var client = inbox.createConnection(false, "imap.gmail.com", {
-          secureConnection: true,
-          auth:{
-              XOAuth2:{
-                  user: "worldpeaceagentforchange@gmail.com",
-                  clientId: client_id,
-                  clientSecret: process.env.CLIENT_SECRET,
-                  refreshToken: refresh_token,
-                  accessToken: access_token,
-                  timeout: expires_in
-              }
+        secureConnection: true,
+        auth:{
+          XOAuth2:{
+            user: "worldpeaceagentforchange@gmail.com",
+            clientId: client_id,
+            clientSecret: process.env.CLIENT_SECRET,
+            refreshToken: refresh_token,
+            accessToken: access_token,
+            timeout: 0
           }
+        }
       });
 
       client.connect();
 
       client.on("connect", function(){
-          client.openMailbox("INBOX", function(error, info){
-              if(error) throw error;
+        client.openMailbox("INBOX", function(error, info){
+          if(error) throw error;
 
-              client.listMessages(-10, function(err, messages){
-                  messages.forEach(function(message){
-                      console.log(message.UID + ": " + message.title);
-                  });
-              });
-
+          client.search('UID SEARCH X-GM-RAW "zhu"', function(err, uids){
+            var i=0;
+            client.createMessageStream(uids[i]).pipe(process.stdout, {end: false});
           });
+        });
       });
     }
   );

@@ -18,6 +18,7 @@ var userSchema = mongoose.Schema({
 	last_name: String,
 	gmail: String,
 	google_id: String,
+	code: String
 })
 
 var Keyword = mongoose.model('Keyword', keywordSchema);

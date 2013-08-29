@@ -1,3 +1,4 @@
+var config = require('../config.js')
 var models = require('../models/models.js')
 var User = models.User;
 

@@ -61,6 +61,7 @@ passport.use(new GoogleStrategy({
         } else {
           var new_user = User({'first_name': profile.name.givenName, 'last_name':profile.name.familyName,
                                'gmail': profile.emails[0].value, google_id: profile.identifier});
+
           new_user.save(function(err, new_user) {
             if (err) {
               console.log(err);
@@ -88,6 +89,27 @@ app.configure(function(){
   app.use(express.session({secret: process.env.SECRET}));
   app.use(passport.initialize());
   app.use(passport.session());
+  app.use(function(req, res, next) {
+      console.log("Signed cookies:", req.signedCookies);
+      console.log("Cookies:", req.cookies)
+      if (req.cookies && 'google_id' in req.cookies) {
+        if (!req.user) {
+          console.log("URL:", req.url)
+          if (req.url.substr(0, 12) != '/auth/google') {
+            res.redirect('/auth/google');
+          } else {
+            next();
+          }
+        } else {
+          next();
+        }
+      } else if (req.user && req.user.google_id) {
+        res.cookie('google_id', req.user.google_id);
+        next();
+      } else {
+        next();
+      }
+  });
   app.use(app.router);
   app.use(express.static(path.join(__dirname, 'public')));
 });
@@ -107,17 +129,13 @@ app.post('/bayes', search.bayesUpdate);
 app.get('/register', connect.register);
 app.post('/users', connect.addUser);
 
-app.get('/login', function(req, res){
-  res.render('login', { user: req.user });
-});
-
 // GET /auth/google
 //   Use passport.authenticate() as route middleware to authenticate the
 //   request.  The first step in Google authentication will involve redirecting
 //   the user to google.com.  After authenticating, Google will redirect the
 //   user back to this application at /auth/google/return
 app.get('/auth/google', 
-  passport.authenticate('google', { failureRedirect: '/login' }),
+  passport.authenticate('google', { failureRedirect: '/' }),
   function(req, res) {
     res.redirect('/');
   }
@@ -140,41 +158,19 @@ app.get('/logout', function(req, res){
   res.redirect('/');
 });
 
-
-var uri = encodeURIComponent;
-var base_url = 'https://accounts.google.com/o/oauth2/auth?';
-var email = 'https://www.googleapis.com/auth/userinfo.email';
-var profile = 'https://www.googleapis.com/auth/userinfo.profile';
-var gmail = 'https://mail.google.com/'
-var state = '/profile';
-var redirect_uri = 'http://localhost:3000/google_login';
-var grant_type = 'authorization_code'
-var response_type = 'code';
-var client_id = "773068938585.apps.googleusercontent.com";
-var access_type = 'offline';
-var query_params = 'scope='+uri(email)+'+'+uri(profile)+'+'+uri(gmail)+'&state='+uri(state)+'&redirect_uri='+uri(redirect_uri)+
-                   '&response_type='+uri(response_type)+'&client_id='+uri(client_id)+'&access_type='+uri(access_type);
-var auth_url = base_url + query_params;
-
 app.get('/google', function(req, res) {
   req.session.q = req.query.q;
   req.session.reload(console.log);
   if (req.user) {
-    res.redirect(auth_url); 
+    res.redirect(process.env.AUTH_URL); 
   } else {
     res.redirect('/auth/google');
   }
 })
 
-app.get('/google_login', function(req, res){
-  var code = req.query.code;
-  console.log("CODE: ", code);
-  console.log("client_id: ", client_id);
-  console.log('client_secret: ', process.env.CLIENT_SECRET);
-  console.log('redirect_uri: ', redirect_uri);
-  console.log('grant_type: ', grant_type);
-  request.post('https://accounts.google.com/o/oauth2/token', {form: {code: code, client_id: client_id, client_secret: process.env.CLIENT_SECRET,
-                                                              redirect_uri: redirect_uri, grant_type: grant_type}},
+function gmail(req, res, code) {
+  request.post('https://accounts.google.com/o/oauth2/token', {form: {code: code, client_id: process.env.CLIENT_ID, client_secret: process.env.CLIENT_SECRET,
+                                                              redirect_uri: process.env.REDIRECT_URI, grant_type: process.env.GRANT_TYPE}},
     function(e, r, _body) {
       Query.body = JSON.parse(_body);
       User.findOne({google_id: req.user.google_id}).exec(function(err, db_user) {
@@ -202,7 +198,7 @@ app.get('/google_login', function(req, res){
           auth:{
             XOAuth2:{
               user: user_gmail,
-              clientId: client_id,
+              clientId: process.env.CLIENT_ID,
               clientSecret: process.env.CLIENT_SECRET,
               refreshToken: refresh_token,
               accessToken: access_token,
@@ -228,6 +224,7 @@ app.get('/google_login', function(req, res){
                   });
                 } else {
                   console.log(messages);
+                  res.send(messages);
                 }
               }
               recursiveFetch(uids, 0, 10);
@@ -237,6 +234,21 @@ app.get('/google_login', function(req, res){
       })
     }
   );
+}
+
+app.get('/google_login', function(req, res){
+  var code = req.query.code;
+  User.findOne({_id: req.user._id}, function(err, db_user) {
+    if (err) {
+      console.log(err);
+    } else if (db_user) {
+      db_user.code = code;
+      db_user.save(function(err, db_user) {
+        gmail(req, res, code);
+      });
+    }
+  });
+  // console.log("CODE: ", code);
 });
 
 app.listen(process.env.PORT || 3000, function(){

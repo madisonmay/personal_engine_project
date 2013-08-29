@@ -1,4 +1,4 @@
-
+var config = require('../config.js')
 /*
  * GET home page.
  */

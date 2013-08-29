@@ -90,7 +90,7 @@ app.configure(function(){
   app.use(passport.initialize());
   app.use(passport.session());
   app.use(function(req, res, next) {
-      console.log("Signed cookies:", req.signedCookies);
+      //persistent login
       console.log("Cookies:", req.cookies)
       if (req.cookies && 'google_id' in req.cookies) {
         if (!req.user) {

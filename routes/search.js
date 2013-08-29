@@ -58,7 +58,11 @@ function google_images(res, query, refresh, bayes_result) {
 	}
 }
 
-var fns = {'google_web': google_web, 'google_images': google_images}
+function gmail(req, query, refresh, bayes_result) {
+
+}
+
+var fns = {'google_web': google_web, 'google_images': google_images, 'gmail': gmail}
 
 var randomProperty = function (obj) {
     var keys = Object.keys(obj)
@@ -250,7 +254,7 @@ exports.bayesUpdate = function(req, res) {
 			    	var total = 0
 
 			    	//should make copy of the global var instead of manually copying
-			    	var functions = {'google_web': google_web, 'google_images': google_images};
+			    	var functions = {'google_web': google_web, 'google_images': google_images, 'gmail': gmail};
 
 			    	//laplacian smoothing
 			    	function incrementCounts(functions) {

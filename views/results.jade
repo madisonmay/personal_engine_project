@@ -1,6 +1,14 @@
 block body
 	script(src='/js/controller.js')
 
+	style.
+		.gmail-logo {
+			width: 117px;
+			height: 117px;
+			margin-right: 17px;
+			margin-top: 12px;
+		}
+
 	div#arrow-right
 
 	div.sidebar
@@ -19,6 +27,11 @@ block body
 					img.logo(src='/img/google_images-color.png', color=1, active=1)
 				else
 					img.logo(src='/img/google_images.png')
+			if service[1] == 'gmail'
+				if search_type == 'gmail'
+					img.logo.gmail.gmail-logo(src='/img/gmail-color.png', color=1, active=1)
+				else
+					img.logo.gmail-logo(src='/img/gmail.png')
 
 
 	div#content-container

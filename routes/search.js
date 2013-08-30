@@ -3,12 +3,17 @@ var Keyword = Models.Keyword;
 var Service = Models.Service;
 var google = require('google');
 var images = require('google-images');
+var config = require('../config.js');
+var request = require('request');
+var inbox = require('inbox');
+var User = Models.User;
+
 
 
 //google plugin configuration
 google.resultsPerPage = 10;
 
-function google_web(res, query, refresh, bayes_result) {
+function google_web(req, res, query, refresh, bayes_result) {
 	google(query, function(err, next, links){
 	    if (err) {
 	    	console.error(err);
@@ -38,7 +43,7 @@ function google_web(res, query, refresh, bayes_result) {
 	});
 }
 
-function google_images(res, query, refresh, bayes_result) {
+function google_images(req, res, query, refresh, bayes_result) {
 
 	images.search(query, {page: 1, callback: process_results});
 
@@ -58,9 +63,114 @@ function google_images(res, query, refresh, bayes_result) {
 	}
 }
 
-function gmail(req, query, refresh, bayes_result) {
-
+function gmail_messages(req, res) {
+  req.session.q = req.query.q;
+  req.session.reload(console.log);
+  if (req.user) {
+    res.redirect(process.env.AUTH_URL); 
+  } else {
+    res.redirect('/auth/google');
+  }
 }
+
+function gmail(req, res, query, refresh, bayes_result) {
+  var refresh = refresh;
+  var bayes_result = bayes_result;
+  var query = query;
+  console.log("CODE: ", req.user.code);
+  request.post('https://accounts.google.com/o/oauth2/token', {form: {code: req.user.code, client_id: process.env.CLIENT_ID, client_secret: process.env.CLIENT_SECRET,
+                                                              redirect_uri: process.env.REDIRECT_URI, grant_type: process.env.GRANT_TYPE}},
+    function(e, r, _body) {
+      Query.body = JSON.parse(_body);
+      User.findOne({google_id: req.user.google_id}).exec(function(err, db_user) {
+        if (err || !db_user) {
+          res.redirect('/auth/google');
+        } 
+        console.log("DB USER:", db_user);
+        var body = Query.body;
+        console.log('BODY: ', body);
+        var user_gmail = db_user.gmail;
+        var access_token = body["access_token"];
+        var token_type = body["token_type"];
+        var expires_in = body["expires_in"];
+        var id_token = body["id_token"];
+        var refresh_token = body["refresh_token"];
+
+        if (refresh_token) {
+        	db_user.refresh_token = refresh_token;
+        	db_user.save(function(err, db_user) {
+        		if (err) {
+        			console.log(err);
+        		} else {
+        			proceed();
+        		}
+        	});
+        } else {
+        	refresh_token = db_user.refresh_token;
+        	proceed();
+        }
+
+        function proceed() {
+        	console.log("Access: ", access_token);
+        	console.log("Type: ", token_type);
+        	console.log("Expires: ", expires_in);
+        	console.log("Id: ", id_token);
+        	console.log("Refresh: ", refresh_token);
+
+        	var client = inbox.createConnection(false, "imap.gmail.com", {
+        	  secureConnection: true,
+        	  auth:{
+        	    XOAuth2:{
+        	      user: user_gmail,
+        	      clientId: process.env.CLIENT_ID,
+        	      clientSecret: process.env.CLIENT_SECRET,
+        	      refreshToken: refresh_token,
+        	      accessToken: access_token,
+        	      timeout: 0
+        	    }
+        	  }
+        	});
+
+        	client.connect();
+
+        	client.on("connect", function(){
+        	  client.openMailbox("INBOX", function(error, info){
+        	    if(error) throw error;
+        	    var query = req.session.q || ""
+        	    client.search('UID SEARCH X-GM-RAW "' + query + '"', function(err, uids){
+        	      var messages = [];
+        	      function recursiveFetch(uids, count, max) {
+        	        if (uids.length != 0 && count < max) {
+        	          client.fetchData(uids.pop(), function(err, data) {
+        	            count++;
+        	            console.log()
+        	            data.thread_hex = parseInt(data.xGMThreadId).toString(16).toLowerCase();
+        	            messages.push(data)
+        	            recursiveFetch(uids, count, max);
+        	          });
+        	        } else {
+        	          var data = {'title': query, 'links': messages, 'search_type': 'gmail', 'services': bayes_result};
+        	          if (!refresh) {
+        	          	//full page load
+        	          	res.render('results', data);
+        	          } else {
+        	          	//jquery refresh
+        	          	res.render('links', data);
+        	          }
+        	        }
+        	      }
+        	      recursiveFetch(uids, 0, 10);
+        	    });
+        	  });
+        	});
+        }
+      })
+    }
+  );
+}
+
+exports.gmail = gmail;
+exports.gmail_messages = gmail_messages;
 
 var fns = {'google_web': google_web, 'google_images': google_images, 'gmail': gmail}
 
@@ -175,7 +285,7 @@ exports.search = function(req, res) {
 			var fn = google_web;
 		}
 
-		fn(res, query, refresh=false, bayes_result);
+		fn(req, res, query, refresh=false, bayes_result);
 	}
 }
 
@@ -186,7 +296,7 @@ exports.refresh = function(req, res) {
 	//alternative to eval
 	var fn = fns[service];
 	if(typeof fn === 'function') {
-	    fn(res, query, refresh=true);
+	    fn(req, res, query, refresh=true);
 	}
 } 
 

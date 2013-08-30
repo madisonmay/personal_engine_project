@@ -149,15 +149,7 @@ app.get('/logout', function(req, res){
   res.redirect('/');
 });
 
-app.get('/google', function(req, res) {
-  req.session.q = req.query.q;
-  req.session.reload(console.log);
-  if (req.user) {
-    res.redirect(process.env.AUTH_URL); 
-  } else {
-    res.redirect('/auth/google');
-  }
-})
+app.get('/google', search.gmail_messages);
 
 app.get('/google_login', function(req, res){
   var code = req.query.code;
@@ -170,7 +162,8 @@ app.get('/google_login', function(req, res){
         if (err) {
           console.log(err);
         }
-        connect.gmail(req, res, req.user.code);
+        var bayes_result = [[0.5, 'gmail'], [0.5, 'google_web'], [0.5, 'google_images']];
+        search.gmail(req, res, req.session.q, refresh=false, bayes_result);
       });
     }
   });

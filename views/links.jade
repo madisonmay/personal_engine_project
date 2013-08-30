@@ -5,6 +5,8 @@ script.
 	var ideal_height = window_height/2;
 
 div(ng-controller="LinkCtrl")
+	script.
+		var res = links
 	each link in links
 		if search_type == "google_images"
 			a.result(href='#{link.unescapedUrl}')
@@ -12,6 +14,9 @@ div(ng-controller="LinkCtrl")
 		if search_type == "google_web"
 			div
 				a.result(href!='#{link.url}') #{link.title}
+		if search_type == "gmail"
+			div
+				a.result(href!='https://mail.google.com/mail/#sent/'+'#{link.thread_hex}') #{link.from.name} - #{link.title}
 
 if search_type == "google_images"
 	script.
